@@ -9,7 +9,7 @@ from config.settings import (
     APP_NAME_FOR_ADK,
     USER_ID,
     MODEL_GEMINI,
-    get_api_key
+    # get_api_key #uncomment if you want to check API key in the future
 )
 
 
@@ -34,21 +34,21 @@ def render_header():
     st.divider()
 
 
-def check_api_key():
-    """Check if API key is valid and display error if not"""
-    api_key = get_api_key()
-    if not api_key:
-        st.error(
-            "⚠️ **Action Required: Google API Key Not Found or Invalid!** ⚠️\n\n"
-            "1. Create a file named `.env` in the same directory as your script.\n"
-            "2. Add the following line to the `.env` file:\n"
-            "   `GOOGLE_API_KEY='YOUR_ACTUAL_GEMINI_API_KEY'`\n"
-            "3. Replace `YOUR_ACTUAL_GEMINI_API_KEY` with your valid key from Google AI Studio.\n"
-            "4. **Restart the Streamlit application.**",
-            icon="🔥"
-        )
-        st.stop()  # Halt further execution if key is missing/invalid
-    return api_key
+# def check_api_key():
+#     """Check if API key is valid and display error if not"""
+#     api_key = get_api_key()
+#     if not api_key:
+#         st.error(
+#             "⚠️ **Action Required: Google API Key Not Found or Invalid!** ⚠️\n\n"
+#             "1. Create a file named `.env` in the same directory as your script.\n"
+#             "2. Add the following line to the `.env` file:\n"
+#             "   `GOOGLE_API_KEY='YOUR_ACTUAL_GEMINI_API_KEY'`\n"
+#             "3. Replace `YOUR_ACTUAL_GEMINI_API_KEY` with your valid key from Google AI Studio.\n"
+#             "4. **Restart the Streamlit application.**",
+#             icon="🔥"
+#         )
+#         st.stop()  # Halt further execution if key is missing/invalid
+#     return api_key
 
 
 def initialize_adk_service() -> Tuple[Runner, str]:
@@ -128,7 +128,7 @@ def run_streamlit_app():
     render_header()
     
     # Check API key
-    check_api_key()
+    # check_api_key()
     
     # Initialize ADK service
     adk_runner, current_session_id = initialize_adk_service()
