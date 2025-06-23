@@ -1,6 +1,7 @@
+# services/adk_service.py
 
 import os
-import asyncio
+import asyncio # Make sure asyncio is imported
 import time
 import logging
 import streamlit as st
@@ -12,9 +13,9 @@ from google.genai import types as genai_types
 
 from agents.greeting_agent import create_greeting_agent
 from config.settings import (
-    APP_NAME_FOR_ADK, 
-    USER_ID, 
-    INITIAL_STATE, 
+    APP_NAME_FOR_ADK,
+    USER_ID,
+    INITIAL_STATE,
     ADK_SESSION_KEY
 )
 
@@ -29,10 +30,10 @@ def initialize_adk() -> Tuple[Runner, str]:
         tuple: (Runner instance, active ADK session ID)
     """
     print("--- ADK Init: Attempting to initialize Runner and Session Service... ---")
-    
+
     # Create the greeting agent
     root_agent = create_greeting_agent()
-    
+
     session_service = InMemorySessionService()
     runner = Runner(
         agent=root_agent,
@@ -47,13 +48,17 @@ def initialize_adk() -> Tuple[Runner, str]:
         print(f"--- ADK Init: Created new session with ID: {st.session_state[ADK_SESSION_KEY]} ---")
         try:
             # Create the initial session record within the ADK session service
-            session_service.create_session(
+            # AWAITING THE ASYNC CALL USING asyncio.run()
+            asyncio.run(session_service.create_session(
                 app_name=APP_NAME_FOR_ADK,
                 user_id=USER_ID,
                 session_id=session_id,
                 state={},  # Initial ADK session state is empty
-            )
+            ))
             print(f"--- ADK Init: Successfully created new session in ADK SessionService. ---")
+            # AWAITING THE ASYNC CALL USING asyncio.run() FOR DEBUG PRINT
+            test_session_after_create = asyncio.run(session_service.get_session(app_name=APP_NAME_FOR_ADK, user_id=USER_ID, session_id=session_id))
+            print(f"--- ADK Init: DEBUG - Session immediately after initial creation: {test_session_after_create is not None} ---")
         except Exception as e:
             print(f"--- ADK Init: FATAL ERROR - Could not create initial session in ADK SessionService: {e} ---")
             logging.exception("ADK Session Service create_session failed:")
@@ -61,16 +66,20 @@ def initialize_adk() -> Tuple[Runner, str]:
     else:
         session_id = st.session_state[ADK_SESSION_KEY]
         print(f"--- ADK Init: Reusing existing ADK session ID from Streamlit state: {session_id} ---")
-        # For InMemorySessionService, check if session actually exists (might be lost on script restart)
-        if not session_service.get_session(app_name=APP_NAME_FOR_ADK, user_id=USER_ID, session_id=session_id):
+        # AWAITING THE ASYNC CALL USING asyncio.run()
+        if not asyncio.run(session_service.get_session(app_name=APP_NAME_FOR_ADK, user_id=USER_ID, session_id=session_id)):
             print(f"--- ADK Init: WARNING - Session {session_id} not found in InMemorySessionService memory (likely due to script restart). Recreating session. State will be lost. ---")
             try:
-                session_service.create_session(
+                # AWAITING THE ASYNC CALL USING asyncio.run()
+                asyncio.run(session_service.create_session(
                     app_name=APP_NAME_FOR_ADK,
                     user_id=USER_ID,
                     session_id=session_id,
                     state=INITIAL_STATE  # Recreated session starts with initial state
-                )
+                ))
+                # AWAITING THE ASYNC CALL USING asyncio.run() FOR DEBUG PRINT
+                test_session_after_recreate = asyncio.run(session_service.get_session(app_name=APP_NAME_FOR_ADK, user_id=USER_ID, session_id=session_id))
+                print(f"--- ADK Init: DEBUG - Session immediately after recreation: {test_session_after_recreate is not None} ---")
             except Exception as e:
                 print(f"--- ADK Init: ERROR - Could not recreate missing session {session_id} in ADK SessionService: {e} ---")
                 logging.exception("ADK Session Service recreation failed:")
@@ -95,7 +104,7 @@ async def run_adk_async(runner: Runner, session_id: str, user_message_text: str)
     print(f"--- ADK Run: Processing User Query (truncated): '{user_message_text[:150]}...' ---")
 
     # Retrieve the ADK session object to update its state
-    session = runner.session_service.get_session(app_name=APP_NAME_FOR_ADK, user_id=USER_ID, session_id=session_id)
+    session = await runner.session_service.get_session(app_name=APP_NAME_FOR_ADK, user_id=USER_ID, session_id=session_id)
     if not session:
         return "Error: ADK session not found. Please refresh the page."
 
